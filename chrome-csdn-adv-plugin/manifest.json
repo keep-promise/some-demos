@@ -1,0 +1,11 @@
+
+{
+  "name": "CSDN Ad Blocker",
+  "version": "1.0",
+  "description": "simple javascript to block the ads from csdn website",
+  "manifest_version": 2,
+  "content_scripts": [{
+    "js": ["js/index.js"],
+    "matches": ["https://blog.csdn.net/*"]
+  }]
+}

@@ -103,8 +103,6 @@ const RELATION_MAP: any = {
 
 const LOGIC_MAP = key2value(RELATION_MAP);
 
-console.log('==LOGIC_MAP', LOGIC_MAP)
-
 function key2value(obj: any) {
   let result: any = {}
   Object.keys(obj).forEach((key: string) => {
@@ -115,7 +113,6 @@ function key2value(obj: any) {
 
 
 export const rule2Express = (root: any) => {
-
   if (!root) {
     return '';
   }
@@ -123,8 +120,8 @@ export const rule2Express = (root: any) => {
   const type = get(root, 'type');
 
   if (type === 'group') {
-    const children = get(root, 'children', []) || [];
-    const relation = get(root, 'relation', []) || [];
+    const children = root.children || [];
+    const relation = root.relation || 'and';
 
     if (children && Array.isArray(children) && children.length) {
 
@@ -134,7 +131,6 @@ export const rule2Express = (root: any) => {
         const express = rule2Express(item);
         expressList.push(`(${express})`);
       });
-
       return expressList.join(RELATION_MAP[relation]);
     }
   } else if (type === 'item') {
@@ -185,9 +181,16 @@ export function express2Rule(express: string, id: string = 'root') {
   };
   if (!express.includes('||') && !express.includes('&&')) {
     const rule = express2RuleItem(express);
-    result.relation = 'and';
-    result.children.push(rule);
-    return result;
+    if (id === 'root') {
+      return {
+        type: 'group',
+        id: id,
+        relation: 'and',
+        children: [rule]
+      };
+    } else {
+      return rule;
+    }
   }
   const { leftExpress, relation, rightExpress }  = splitExpress(express);
   result.relation = relation;
@@ -199,17 +202,18 @@ export function express2Rule(express: string, id: string = 'root') {
 }
 
 function express2RuleItem(express: string) {
+  express = express.replaceAll(/[\(\)]/g, '');
   const data: any = {};
+  OPERATOR_SYMS.some((operator) => {
+    if (express.includes(OPERATOR_MAP[operator])) {
+      data.operator = operator;
+      return true;
+    }
+  });
   const reg = /\'(.+?)\'/g;
   const values = express.match(reg);
   data.leftValue = values?.[0].replace(/\'/g, '');
   data.rightValue = values?.[1].replace(/\'/g, '');
-  OPERATOR_SYMS.some((sym) => {
-    if (express.includes(OPERATOR_MAP[sym])) {
-      data.operator = sym;
-      return true;
-    }
-  });
   return {
     type: 'item',
     id: uuid2(),
@@ -260,4 +264,117 @@ function removeOuterBracket(express: string): string {
   }
   return express;
 }
-            
+
+const testrule = {
+  "type": "group",
+  "id": "root",
+  "children": [
+      {
+          "type": "item",
+          "id": "EYYcvDpDHxWITbmX",
+          "data": {
+              "leftValue": "module",
+              "operator": "=",
+              "rightValue": "order-view",
+              "props": {
+                  "operator": {
+                      "mode": "select"
+                  },
+                  "leftValue": {
+                      "mode": "select"
+                  },
+                  "rightValue": {
+                      "labels": {
+                          "order-view": "订单视图"
+                      }
+                  }
+              }
+          }
+      },
+      {
+          "type": "item",
+          "id": "gtk20u309u9",
+          "data": {
+              "leftValue": "submodule",
+              "operator": "=",
+              "rightValue": "2022102800000001158",
+              "props": {
+                  "leftValue": {
+                      "mode": "select"
+                  },
+                  "operator": {
+                      "mode": "select"
+                  },
+                  "rightValue": {
+                      "labels": {
+                          "2022102800000001158": "酒店"
+                      }
+                  }
+              }
+          }
+      },
+      {
+          "type": "group",
+          "id": "f3p05eq3hq8",
+          "relation": "and",
+          "children": [
+              {
+                  "type": "item",
+                  "id": "4x438y1u555",
+                  "data": {
+                      "leftValue": "submodule",
+                      "operator": "=",
+                      "rightValue": "2022102800000001157",
+                      "props": {
+                          "leftValue": {
+                              "mode": "select"
+                          },
+                          "operator": {
+                              "mode": "select"
+                          },
+                          "rightValue": {
+                              "labels": {
+                                  "2022102800000001157": "国内机票"
+                              }
+                          }
+                      }
+                  }
+              },
+              {
+                  "type": "item",
+                  "id": "0x5d006bp8xl",
+                  "data": {
+                      "leftValue": "user",
+                      "operator": "=",
+                      "props": {
+                          "leftValue": {
+                              "mode": "input"
+                          },
+                          "operator": {
+                              "mode": "input"
+                          }
+                      },
+                      "rightValue": "3333"
+                  }
+              }
+          ]
+      },
+      {
+          "type": "item",
+          "id": "k7ibx0l19i",
+          "data": {
+              "leftValue": "orderId",
+              "operator": "=",
+              "props": {
+                  "leftValue": {
+                      "mode": "input"
+                  },
+                  "operator": {
+                      "mode": "input"
+                  }
+              },
+              "rightValue": "11111"
+          }
+      }
+  ]
+};
